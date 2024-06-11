@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Чат с эхо-сервером</title>
+  <style>
+    .chat-container {
+      width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+    }
+    .chat-window {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .message-input {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-window"></div>
+    <input type="text" class="message-input" placeholder="Введите сообщение">
+    <button class="send-button">Отправить</button>
+    <button class="location-button">Геолокация</button>
+  </div>
+
+  <script>
+    const chatWindow = document.querySelector('.chat-window');
+    const messageInput = document.querySelector('.message-input');
+    const sendButton = document.querySelector('.send-button');
+    const locationButton = document.querySelector('.location-button');
+
+    const websocket = new WebSocket('wss://echo-ws-service.herokuapp.com');
+        websocket.onmessage = (e) => {
+            const message = e.data;
+            displayMessage('server',message);
+        }
+        messageInput.addEventListener('keyup', (e) => {
+            if(e.keyCode === 13){
+                sendMessage();
+            }
+        }) 
+        const sendMessage = () => {
+            const message = messageInput.value;
+            if(message.trim() !== ''){
+                displayMessage('user',message);
+                websocket.send(message);
+                messageInput.value = '';
+            }
+        }
+        sendButton.addEventListener('click',sendMessage);
+        const displayMessage = (sendr,message) =>{
+            const messageElem = document.createElement("div");
+            messageElem.innerHTML = `<strong>${sendr}:</strong> ${message}`;
+            chatWindow.appendChild(messageElem);
+        }
+        const sendLocaishen = () => {
+            if("geolocation" in navigator){
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const locationLink = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+                    displayMessage("user",`<a href="${locationLink}" target="_blank">Моя локация</a>`);
+                })
+            }
+            else{
+                displayMessage("user","Гео-локация не поддерживается")
+            }
+        } 
+        locationButton.addEventListener('click',sendLocaishen);
+  </script> 
+</body>
+</html> 
